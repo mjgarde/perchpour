@@ -46,66 +46,7 @@ $initial = strtoupper(substr($fullName, 0, 1));
 
     <div class="container-fluid px-4 py-4" style="max-width: 1100px;">
 
-        <div class="card border-dark-subtle rounded-0 mb-4">
-            <div class="card-body p-4">
-                <h2 class="h5 fw-bold mb-1">Welcome, <?php echo htmlspecialchars($fullName); ?></h2>
-                <p class="text-secondary small mb-0">Naka-login ka bilang staff ng Perch &amp; Pour system.</p>
-            </div>
-        </div>
-
-        <div class="row g-3 mb-4">
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="card border-dark-subtle rounded-0 h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-2 text-uppercase text-secondary small fw-semibold mb-2">
-                            <i class="fa-solid fa-mug-hot"></i>
-                            <span>Orders In Queue</span>
-                        </div>
-                        <div class="fs-3 fw-bold lh-1">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="card border-dark-subtle rounded-0 h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-2 text-uppercase text-secondary small fw-semibold mb-2">
-                            <i class="fa-solid fa-bell-concierge"></i>
-                            <span>Service Requests</span>
-                        </div>
-                        <div class="fs-3 fw-bold lh-1">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="card border-dark-subtle rounded-0 h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-2 text-uppercase text-secondary small fw-semibold mb-2">
-                            <i class="fa-solid fa-broom"></i>
-                            <span>Cleaning Tasks</span>
-                        </div>
-                        <div class="fs-3 fw-bold lh-1">0</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-12 col-sm-6 col-lg-3">
-                <div class="card border-dark-subtle rounded-0 h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-2 text-uppercase text-secondary small fw-semibold mb-2">
-                            <i class="fa-solid fa-fingerprint"></i>
-                            <span>Time-In Status</span>
-                        </div>
-                        <div class="fs-3 fw-bold lh-1">—</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <h3 class="h6 fw-bold border-bottom pb-2 mb-3">Recent Activity</h3>
-
-        <div class="border border-dark-subtle text-center text-secondary py-5 px-3">
-            <i class="fa-solid fa-inbox d-block mb-2 fs-4"></i>
-            No recent activity yet.
-        </div>
+    
 
     </div>
 </div>

@@ -12,13 +12,11 @@ $fullName = $_SESSION['full_name'] ?? 'Staff';
 $initial  = strtoupper(substr($fullName, 0, 1));
 $today    = date('Y-m-d');
 
-/* ---------- AJAX: any staff QR is accepted (kiosk mode) ---------- */
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['scan_qr'])) {
     header('Content-Type: application/json');
 
     $scanned_code = trim($_POST['scan_qr']);
 
-    // 1. Look up by QR code — ANY staff, not just the logged-in user.
     $stmt = mysqli_prepare($conn, "SELECT staff_id FROM staff WHERE qr_code = ?");
     mysqli_stmt_bind_param($stmt, "s", $scanned_code);
     mysqli_stmt_execute($stmt);
@@ -33,7 +31,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['scan_qr'])) {
 
     $sid = (int) $staffRow['staff_id'];
 
-    // 2. Check today's attendance for that staff.
     $stmt = mysqli_prepare($conn, "SELECT * FROM attendance WHERE staff_id = ? AND attendance_date = ?");
     mysqli_stmt_bind_param($stmt, "is", $sid, $today);
     mysqli_stmt_execute($stmt);
@@ -47,7 +44,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['scan_qr'])) {
         mysqli_stmt_execute($stmt);
         mysqli_stmt_close($stmt);
 
-        // Generic response — no name, no exact time (kiosk privacy).
         echo json_encode(['status' => 'success', 'action' => 'time_in', 'message' => 'Time-In recorded.']);
         exit();
     }
@@ -79,33 +75,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['scan_qr'])) {
 <style>
     body {
         font-family: Georgia, 'Times New Roman', serif;
-        background-color: #f8f9fa;
-        color: #111;
+        background-color:
+        color:
     }
 
-    #qr-reader {
         width: 100%;
         max-width: 460px;
         margin: 0 auto;
-        border: 1px solid #dee2e6;
+        border: 1px solid
         border-radius: 4px;
         overflow: hidden;
     }
-    #qr-reader img { display: none; }
 
     .scan-status {
         min-height: 24px;
         font-size: 14px;
         text-align: center;
     }
-    .scan-status.ok  { color: #1a7f37; font-weight: 600; }
-    .scan-status.err { color: #d70015; font-weight: 600; }
+    .scan-status.ok  { color:
+    .scan-status.err { color:
 
     .scan-flash {
         position: fixed;
         inset: 0;
         background: rgba(26, 127, 55, 0.92);
-        color: #fff;
+        color:
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -123,7 +117,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['scan_qr'])) {
 
     .kiosk-hint {
         font-size: 12px;
-        color: #6b7280;
+        color:
         text-transform: uppercase;
         letter-spacing: 0.08em;
         font-weight: 600;

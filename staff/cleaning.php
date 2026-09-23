@@ -279,7 +279,7 @@ $history = mysqli_stmt_get_result($stmt);
 
                     <div class="empty-box">
                         <i class="fa-solid fa-mug-hot d-block mb-2 fs-3"></i>
-                        Wala kang cleaning task ngayong araw. Enjoy!
+                        No cleaning task.
                     </div>
 
                 <?php else: ?>
@@ -361,7 +361,7 @@ $history = mysqli_stmt_get_result($stmt);
 
                     <div class="empty-box">
                         <i class="fa-solid fa-clock-rotate-left d-block mb-2 fs-3"></i>
-                        Wala pang history.
+                        No history.
                     </div>
 
                 <?php else: ?>
