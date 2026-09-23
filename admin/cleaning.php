@@ -14,9 +14,6 @@ $initial  = strtoupper(substr($fullName, 0, 1));
 $success = '';
 $error   = '';
 
-/* ============================================================
-   POST: ASSIGN TASK
-============================================================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_task'])) {
     $task_name = trim($_POST['task_name'] ?? '');
     $area      = trim($_POST['area'] ?? '');
@@ -49,9 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['assign_task'])) {
     }
 }
 
-/* ============================================================
-   POST: CANCEL ASSIGNMENT
-============================================================ */
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_assignment'])) {
     $aid = (int) $_POST['assignment_id'];
     $stmt = mysqli_prepare($conn,
@@ -62,25 +56,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['cancel_assignment']))
     $success = 'Assignment cancelled.';
 }
 
-/* ============================================================
-   FILTERS
-============================================================ */
 $filterDate   = $_GET['date']   ?? date('Y-m-d');
 $filterStatus = $_GET['status'] ?? '';
 $filterStaff  = isset($_GET['staff']) ? (int) $_GET['staff'] : 0;
 
-/* ============================================================
-   FETCH: Staff list
-============================================================ */
 $staffList = [];
 $res = mysqli_query($conn, "SELECT staff_id, full_name FROM staff ORDER BY full_name ASC");
 while ($row = mysqli_fetch_assoc($res)) {
     $staffList[] = $row;
 }
 
-/* ============================================================
-   STATS (today)
-============================================================ */
 $today = date('Y-m-d');
 $stats = ['total' => 0, 'pending' => 0, 'in_progress' => 0, 'completed' => 0, 'missed' => 0];
 $res = mysqli_query($conn,
@@ -91,9 +76,6 @@ while ($row = mysqli_fetch_assoc($res)) {
     $stats['total'] += (int) $row['c'];
 }
 
-/* ============================================================
-   FETCH: Assignments (monitoring)
-============================================================ */
 $sql = "SELECT a.*, s.full_name AS staff_name
         FROM cleaning_assignments a
         INNER JOIN staff s ON s.staff_id = a.staff_id
@@ -132,17 +114,17 @@ $assignments = mysqli_stmt_get_result($stmt);
 <style>
     body {
         font-family: Georgia, 'Times New Roman', serif;
-        background-color: #f8f9fa;
-        color: #111;
+        background-color:
+        color:
     }
 
     .table thead th {
         font-size: 11.5px;
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        color: #6b7280;
+        color:
         font-weight: 700;
-        border-bottom: 2px solid #111;
+        border-bottom: 2px solid
         white-space: nowrap;
     }
     .table tbody td { vertical-align: middle; font-size: 14px; }
@@ -159,11 +141,11 @@ $assignments = mysqli_stmt_get_result($stmt);
         border-radius: 20px;
         white-space: nowrap;
     }
-    .status-pill.pending     { background: #eef0f2; color: #444; }
-    .status-pill.in_progress { background: #fdf3e0; color: #a86b00; }
-    .status-pill.completed   { background: #eaf6ec; color: #1a7f37; }
-    .status-pill.missed      { background: #fdecec; color: #b91c1c; }
-    .status-pill.cancelled   { background: #f3f4f6; color: #9ca3af; }
+    .status-pill.pending     { background:
+    .status-pill.in_progress { background:
+    .status-pill.completed   { background:
+    .status-pill.missed      { background:
+    .status-pill.cancelled   { background:
 
     .freq-badge {
         font-size: 10.5px;
@@ -173,26 +155,26 @@ $assignments = mysqli_stmt_get_result($stmt);
         border-radius: 20px;
         font-weight: 700;
     }
-    .freq-badge.daily  { background: #111; color: #fff; }
-    .freq-badge.weekly { background: #e5e7eb; color: #111; }
+    .freq-badge.daily  { background:
+    .freq-badge.weekly { background:
 
     .avatar-sm {
         width: 30px; height: 30px; border-radius: 50%;
-        background: #111; color: #fff;
+        background:
         display: inline-flex; align-items: center; justify-content: center;
         font-weight: 700; font-size: 12px; flex-shrink: 0;
     }
 
     .nav-tabs .nav-link {
-        border-radius: 0; color: #444; font-weight: 600; font-size: 13.5px;
+        border-radius: 0; color:
     }
     .nav-tabs .nav-link.active {
-        color: #111; border-color: #111 #111 #fff; border-top-width: 2px;
+        color:
     }
 
     .proof-thumb {
         width: 42px; height: 42px; object-fit: cover;
-        border: 1px solid #dee2e6; cursor: pointer; border-radius: 3px;
+        border: 1px solid
     }
 </style>
 </head>
