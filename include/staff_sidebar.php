@@ -11,6 +11,7 @@ $navGroups = [
         ['kitchen.php', 'fa-solid fa-mug-hot', 'Kitchen Display'],
         ['service_requests.php', 'fa-solid fa-bell-concierge', 'Service Requests'],
         ['cleaning.php', 'fa-solid fa-broom', 'Cleaning Tasks'],
+        ['inventory.php', 'fa-solid fa-boxes-stacked', 'Inventory'],
     ],
     'My Records' => [
         ['attendance.php', 'fa-solid fa-fingerprint', 'Attendance / DTR'],

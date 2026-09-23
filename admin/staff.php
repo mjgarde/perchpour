@@ -31,11 +31,8 @@ function validate_staff_input($name, $user, $pass, $address, $contact, $requireP
     if (!preg_match("/^[a-zA-Z0-9_\.]+$/", $user)) {
         return "Username may only contain letters, numbers, underscores, and periods.";
     }
-    if ($requirePassword && mb_strlen($pass) < 8) {
-        return "Password must be at least 8 characters long.";
-    }
-    if (!$requirePassword && $pass !== '' && mb_strlen($pass) < 8) {
-        return "Password must be at least 8 characters long.";
+    if ($requirePassword && mb_strlen($pass) < 1) {
+        return "Please enter a password.";
     }
     if (mb_strlen($address) < 5 || mb_strlen($address) > 200) {
         return "Address must be between 5 and 200 characters.";
@@ -44,6 +41,19 @@ function validate_staff_input($name, $user, $pass, $address, $contact, $requireP
         return "Contact number must be a valid PH mobile number (e.g. 09XXXXXXXXX).";
     }
     return "";
+}
+
+function generate_unique_qr_code($conn) {
+    do {
+        $code = 'PP-' . strtoupper(bin2hex(random_bytes(6)));
+        $check = mysqli_prepare($conn, "SELECT staff_id FROM staff WHERE qr_code = ?");
+        mysqli_stmt_bind_param($check, "s", $code);
+        mysqli_stmt_execute($check);
+        mysqli_stmt_store_result($check);
+        $exists = mysqli_stmt_num_rows($check) > 0;
+        mysqli_stmt_close($check);
+    } while ($exists);
+    return $code;
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_staff'])) {
@@ -66,12 +76,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_staff'])) {
         if (mysqli_stmt_num_rows($check) > 0) {
             $error = "Username already exists. Please choose another.";
         } else {
-            $hashed = password_hash($emp_pass, PASSWORD_DEFAULT);
-            $stmt = mysqli_prepare($conn, "INSERT INTO staff (full_name, username, password, address, contact_number) VALUES (?, ?, ?, ?, ?)");
-            mysqli_stmt_bind_param($stmt, "sssss", $emp_name, $emp_user, $hashed, $emp_address, $emp_contact);
+            $hashed  = password_hash($emp_pass, PASSWORD_DEFAULT);
+            $qr_code = generate_unique_qr_code($conn);
+
+            $stmt = mysqli_prepare($conn, "INSERT INTO staff (full_name, username, password, address, contact_number, qr_code) VALUES (?, ?, ?, ?, ?, ?)");
+            mysqli_stmt_bind_param($stmt, "ssssss", $emp_name, $emp_user, $hashed, $emp_address, $emp_contact, $qr_code);
 
             if (mysqli_stmt_execute($stmt)) {
-                $success = "Staff account created successfully.";
+                $success = "Staff account created successfully. QR code generated.";
                 $justAdded = true;
             } else {
                 $error = "Something went wrong. Please try again.";
@@ -127,6 +139,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_staff'])) {
     }
 }
 
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['regenerate_qr'])) {
+    $regen_id = (int) $_POST['staff_id'];
+    $new_qr   = generate_unique_qr_code($conn);
+
+    $stmt = mysqli_prepare($conn, "UPDATE staff SET qr_code = ? WHERE staff_id = ?");
+    mysqli_stmt_bind_param($stmt, "si", $new_qr, $regen_id);
+    if (mysqli_stmt_execute($stmt)) {
+        $success = "QR code regenerated. The old QR code is no longer valid.";
+    } else {
+        $error = "Unable to regenerate QR code.";
+    }
+    mysqli_stmt_close($stmt);
+}
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_staff'])) {
     $delete_id = (int) $_POST['staff_id'];
     $stmt = mysqli_prepare($conn, "DELETE FROM staff WHERE staff_id = ?");
@@ -160,6 +186,7 @@ if ($result) {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="stylesheet" href="../vendor/bootstrap-5.3.8/css/bootstrap.min.css">
 <link rel="stylesheet" href="../vendor/fontawesome-free-7.3.1/css/all.min.css">
+<link rel="stylesheet" href="style.css">
 <style>
     :root {
         --bg: #fbfbfa;
@@ -272,9 +299,7 @@ if ($result) {
     }
     .search-box input:focus { border-color: var(--accent); }
 
-    .filter-select-wrap {
-        position: relative;
-    }
+    .filter-select-wrap { position: relative; }
 
     .filter-select-wrap i {
         position: absolute;
@@ -364,7 +389,7 @@ if ($result) {
         overflow-x: auto;
     }
 
-    table.emp-table { width: 100%; border-collapse: collapse; min-width: 680px; }
+    table.emp-table { width: 100%; border-collapse: collapse; min-width: 720px; }
 
     table.emp-table th {
         text-align: left;
@@ -414,6 +439,20 @@ if ($result) {
 
     .emp-date { color: var(--ink-soft); white-space: nowrap; }
 
+    .qr-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11.5px;
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        color: var(--ink-soft);
+        background: #fafafa;
+        border: 1px solid var(--border);
+        padding: 3px 8px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+
     .row-actions { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
 
     .icon-btn {
@@ -432,6 +471,7 @@ if ($result) {
     }
     .icon-btn:hover { background: var(--hover); border-color: var(--border); color: var(--accent); }
     .icon-btn.danger:hover { color: var(--red); }
+    .icon-btn.qr:hover { color: #6f42c1; }
 
     .empty-note {
         border: 1px solid var(--border);
@@ -561,6 +601,21 @@ if ($result) {
     .btn-submit.danger { background: var(--red); }
     .btn-submit.danger:hover { background: #a80010; }
 
+    .btn-submit.muted { background: #6f42c1; }
+    .btn-submit.muted:hover { background: #5c359e; }
+
+    #qrcodeCanvas { display: flex; justify-content: center; margin: 14px 0; }
+    #qrcodeCanvas img, #qrcodeCanvas canvas { border-radius: 8px; }
+
+    .qr-code-text {
+        font-family: "SF Mono", Menlo, Consolas, monospace;
+        font-size: 12px;
+        color: var(--ink-soft);
+        text-align: center;
+        margin-top: 6px;
+        word-break: break-all;
+    }
+
     @media (max-width: 991.98px) {
         .menu-toggle { display: inline-flex; }
     }
@@ -582,6 +637,25 @@ if ($result) {
         .filter-select { width: 100%; }
         .toolbar { flex-direction: column; align-items: stretch; }
         .modal-box { padding: 20px 18px 18px; }
+    }
+
+    @media print {
+        body * { visibility: hidden; }
+        #staffQrPrint, #staffQrPrint * { visibility: visible; }
+        #staffQrPrint {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        #staffQrPrint img, #staffQrPrint canvas {
+            width: 320px !important;
+            height: 320px !important;
+        }
     }
 </style>
 </head>
@@ -635,7 +709,7 @@ if ($result) {
             <div class="empty-note">
                 <i class="fa-solid fa-users"></i>
                 <strong>No staff added yet</strong>
-                Click "Add Staff" to create a staff account.
+                Click "Add Staff" to create a staff account. A QR code will be generated automatically.
             </div>
         <?php else: ?>
             <div class="result-count" id="resultCount"></div>
@@ -647,6 +721,7 @@ if ($result) {
                             <th><i class="fa-solid fa-at"></i>Username</th>
                             <th><i class="fa-solid fa-location-dot"></i>Address</th>
                             <th><i class="fa-solid fa-phone"></i>Contact</th>
+                            <th><i class="fa-solid fa-qrcode"></i>QR Code</th>
                             <th><i class="fa-solid fa-calendar"></i>Date Added</th>
                             <th></th>
                         </tr>
@@ -669,9 +744,16 @@ if ($result) {
                             <td><span class="emp-username"><?php echo htmlspecialchars($emp['username']); ?></span></td>
                             <td><?php echo htmlspecialchars($emp['address']); ?></td>
                             <td><?php echo htmlspecialchars($emp['contact_number'] ?: '—'); ?></td>
+                            <td>
+                                <span class="qr-badge"><i class="fa-solid fa-qrcode"></i><?php echo htmlspecialchars($emp['qr_code'] ?? '—'); ?></span>
+                            </td>
                             <td><span class="emp-date"><?php echo date("M d, Y", strtotime($emp['created_at'])); ?></span></td>
                             <td>
                                 <div class="row-actions">
+                                    <button type="button" class="icon-btn qr" title="View / Print QR"
+                                        onclick="openQrModal('<?php echo htmlspecialchars($emp['qr_code'] ?? ''); ?>', '<?php echo htmlspecialchars(addslashes($emp['full_name'])); ?>', <?php echo (int) $emp['staff_id']; ?>)">
+                                        <i class="fa-solid fa-qrcode"></i>
+                                    </button>
                                     <button type="button" class="icon-btn" title="Edit"
                                         onclick='openEditModal(<?php echo json_encode($emp, JSON_HEX_APOS | JSON_HEX_QUOT); ?>)'>
                                         <i class="fa-solid fa-pen"></i>
@@ -695,7 +777,7 @@ if ($result) {
 <div class="modal-overlay" id="addModal">
     <div class="modal-box">
         <h3><i class="fa-solid fa-user-plus"></i>Add Staff</h3>
-        <p class="modal-sub">Create a staff account for the Perch &amp; Pour system.</p>
+        <p class="modal-sub">Create a staff account for the Perch &amp; Pour system. A unique QR code will be generated automatically.</p>
 
         <form method="POST" action="">
             <div class="field">
@@ -709,9 +791,9 @@ if ($result) {
             </div>
 
             <div class="field">
-                <label for="password"><i class="fa-solid fa-lock"></i>Password</label>
-                <input type="password" id="password" name="password" required minlength="8">
-                <div class="hint">At least 8 characters.</div>
+                <label for="password"><i class="fa-solid fa-lock"></i>Password (PIN)</label>
+                <input type="password" id="password" name="password" required inputmode="numeric">
+                <div class="hint">Any number of digits.</div>
             </div>
 
             <div class="field">
@@ -751,9 +833,9 @@ if ($result) {
             </div>
 
             <div class="field">
-                <label for="edit_password"><i class="fa-solid fa-lock"></i>Password</label>
-                <input type="password" id="edit_password" name="password" minlength="8">
-                <div class="hint">Leave blank to keep the current password.</div>
+                <label for="edit_password"><i class="fa-solid fa-lock"></i>Password (PIN)</label>
+                <input type="password" id="edit_password" name="password" inputmode="numeric">
+                <div class="hint">Leave blank to keep the current PIN. Any number of digits.</div>
             </div>
 
             <div class="field">
@@ -789,7 +871,39 @@ if ($result) {
     </div>
 </div>
 
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-box" style="text-align:center;">
+        <h3 style="justify-content:center;"><i class="fa-solid fa-qrcode"></i>Staff QR Code</h3>
+        <p class="modal-sub" id="qrModalName"></p>
+
+        <div id="staffQrPrint">
+            <div id="qrcodeCanvas"></div>
+            <div class="qr-code-text" id="qrModalCode"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top:16px;">
+            <button type="button" class="btn-cancel" onclick="printStaffQr()">
+                <i class="fa-solid fa-print"></i>Print
+            </button>
+            <button type="button" class="btn-cancel" onclick="downloadStaffQr()">
+                <i class="fa-solid fa-download"></i>Download
+            </button>
+        </div>
+
+        <form method="POST" action="" onsubmit="return confirm('Regenerate QR code? The old QR (printed or saved) will stop working immediately.');" style="margin-top:10px;">
+            <input type="hidden" name="staff_id" id="qr_regen_staff_id">
+            <div class="modal-actions">
+                <button type="button" class="btn-cancel" onclick="document.getElementById('qrModal').classList.remove('show')">Close</button>
+                <button type="submit" name="regenerate_qr" class="btn-submit muted">
+                    <i class="fa-solid fa-rotate"></i>Regenerate QR
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="../vendor/bootstrap-5.3.8/js/bootstrap.bundle.min.js"></script>
+<script src="../qrcode.min.js"></script>
 <script>
 function openEditModal(staff) {
     document.getElementById('edit_staff_id').value = staff.staff_id;
@@ -805,6 +919,71 @@ function openDeleteModal(id, name) {
     document.getElementById('delete_staff_id').value = id;
     document.getElementById('deleteModalText').textContent = 'Are you sure you want to delete "' + name + '"? This cannot be undone.';
     document.getElementById('deleteModal').classList.add('show');
+}
+
+function openQrModal(code, name, staffId) {
+    document.getElementById('qrModalName').textContent = name;
+    document.getElementById('qrModalCode').textContent = code;
+    document.getElementById('qr_regen_staff_id').value = staffId;
+
+    const container = document.getElementById('qrcodeCanvas');
+    container.innerHTML = '';
+
+    if (!code) {
+        container.innerHTML = '<p style="color:#86868b;font-size:13px;">No QR code on file for this staff member.</p>';
+    } else {
+        new QRCode(container, {
+            text: code,
+            width: 200,
+            height: 200,
+            colorDark: "#111111",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    }
+
+    document.getElementById('qrModal').classList.add('show');
+}
+
+function printStaffQr() {
+    const name = document.getElementById('qrModalName').textContent;
+    const code = document.getElementById('qrModalCode').textContent;
+    const canvas = document.querySelector('#qrcodeCanvas canvas');
+    if (!canvas) return;
+
+    const imgSrc = canvas.toDataURL();
+    const w = window.open('', '_blank');
+    w.document.write(
+        '<html><head><title>Staff QR - ' + name + '</title>' +
+        '<style>' +
+        '@page { size: A4 portrait; margin: 15mm; }' +
+        'body { font-family: Georgia, serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }' +
+        'h1 { margin: 0 0 4px; font-size: 26px; }' +
+        '.sub { color: #666; font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 20px; }' +
+        'img { width: 320px; height: 320px; }' +
+        '.name { font-size: 22px; font-weight: 700; margin-top: 20px; }' +
+        '.code { font-family: monospace; font-size: 13px; color: #666; margin-top: 6px; }' +
+        '</style></head><body>' +
+        '<h1>Perch &amp; Pour</h1>' +
+        '<div class="sub">Staff Access QR</div>' +
+        '<img src="' + imgSrc + '">' +
+        '<div class="name">' + name + '</div>' +
+        '<div class="code">' + code + '</div>' +
+        '</body></html>'
+    );
+    w.document.close();
+    w.focus();
+    setTimeout(function () { w.print(); w.close(); }, 400);
+}
+
+function downloadStaffQr() {
+    const canvas = document.querySelector('#qrcodeCanvas canvas');
+    if (!canvas) return;
+    const name = document.getElementById('qrModalName').textContent.replace(/\s+/g, '_');
+    const link = document.createElement('a');
+    link.download = 'staff_qr_' + name + '.png';
+    link.href = canvas.toDataURL();
+    link.click();
 }
 
 function filterStaff() {
@@ -846,6 +1025,11 @@ document.addEventListener('DOMContentLoaded', filterStaff);
 document.getElementById('editModal').classList.add('show');
 <?php elseif ($error): ?>
 document.getElementById('addModal').classList.add('show');
+<?php endif; ?>
+
+<?php if ($justAdded): ?>
+document.getElementById('addModal').classList.remove('show');
+document.getElementById('editModal').classList.remove('show');
 <?php endif; ?>
 </script>
 
