@@ -1,0 +1,7 @@
+htdocs/perchpour/
+├── img/
+│   └── logo.png
+├── config/
+│   └── db_connect.php
+├── admin/
+│   └── login.php
